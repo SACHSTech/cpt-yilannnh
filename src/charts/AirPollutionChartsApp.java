@@ -44,19 +44,47 @@ public class AirPollutionChartsApp extends Application {
 
     }
 
+    public double findMinYear() {
+        double min = 2999;
+        for (AirPollutantEmission e : emissions) {
+            if (e.getYear() < min) 
+                min = e.getYear();
+        }
+
+        return min;
+    }
+
+    public double findMaxYear() {
+        double max = 1999;
+        for (AirPollutantEmission e : emissions) {
+            if (e.getYear() > max) 
+                max = e.getYear();
+        }
+
+        return max;
+    }
+
     public Parent createContent() {
-        xAxis = new NumberAxis("Year", 1970d, 2016d, 10d);
-        yAxis = new NumberAxis("Emissions", 0.0d, 30000000.0d, 100000.0d);
+        xAxis = new NumberAxis("Year", findMinYear(), findMaxYear(), 1);
+
+        yAxis = new NumberAxis();
+        yAxis.setLabel("Emissions");
+        yAxis.setAutoRanging(true);
+
         lineChart = new LineChart<>(xAxis, yAxis);
 
         XYChart.Series<Number, Number> usNoxSeries = new XYChart.Series<>();
         usNoxSeries.setName("Nitrogen oxides (NOx) - US");
         XYChart.Series<Number, Number> usSo2Series = new XYChart.Series<>();
         usSo2Series.setName("Sulphur dioxide (SO₂) - US");
+        XYChart.Series<Number, Number> usVocsSeries = new XYChart.Series<>();
+        usVocsSeries.setName("Non-methane volatile organic compounds (VOCs) - US");
         XYChart.Series<Number, Number> ukNoxSeries = new XYChart.Series<>();
         ukNoxSeries.setName("Nitrogen oxides (NOx) - UK");
         XYChart.Series<Number, Number> ukSo2Series = new XYChart.Series<>();
         ukSo2Series.setName("Sulphur dioxide (SO₂) - UK");
+        XYChart.Series<Number, Number> ukVocsSeries = new XYChart.Series<>();
+        ukVocsSeries.setName("Non-methane volatile organic compounds (VOCs) - UK");
 
         for (AirPollutantEmission emission : emissions) {
             if ("GBR".equals(emission.getCountryCode())) {
@@ -66,6 +94,9 @@ public class AirPollutionChartsApp extends Application {
                 ukSo2Series.getData().add(
                     new XYChart.Data<>(emission.getYear(), emission.getSo2())
                     );
+                ukVocsSeries.getData().add(
+                    new XYChart.Data<>(emission.getYear(), emission.getVocs())
+                    );    
         
             } else if ("USA".equals(emission.getCountryCode())) {
                 usNoxSeries.getData().add(
@@ -74,14 +105,19 @@ public class AirPollutionChartsApp extends Application {
                 usSo2Series.getData().add(
                     new XYChart.Data<>(emission.getYear(), emission.getSo2())
                     );
+                usVocsSeries.getData().add(
+                    new XYChart.Data<>(emission.getYear(), emission.getVocs())
+                    );
                 }
 
         }
 
         lineChart.getData().add(usNoxSeries);
         lineChart.getData().add(usSo2Series);
+        lineChart.getData().add(usVocsSeries);
         lineChart.getData().add(ukNoxSeries);
         lineChart.getData().add(ukSo2Series);
+        lineChart.getData().add(ukVocsSeries);
             
         return lineChart;
     }
