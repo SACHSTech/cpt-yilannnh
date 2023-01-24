@@ -1,25 +1,20 @@
 package charts;
 
 import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.util.ArrayList;
-import java.util.Scanner;
 
 import javafx.application.Application;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
-import javafx.scene.chart.CategoryAxis;
 import javafx.scene.chart.LineChart;
 import javafx.scene.chart.NumberAxis;
 import javafx.scene.chart.XYChart;
-import javafx.scene.chart.XYChart.Series;
 import javafx.stage.Stage;
 
 public class AirPollutionChartsApp extends Application {
     private ArrayList<AirPollutantEmission> emissions = new ArrayList<>();
-    private LineChart lineChart;
+    private LineChart<Number, Number> lineChart;
     private NumberAxis xAxis;
     private NumberAxis yAxis;
 
@@ -45,23 +40,48 @@ public class AirPollutionChartsApp extends Application {
             }
         }
 
+        reader.close();
+
     }
 
     public Parent createContent() {
         xAxis = new NumberAxis("Year", 1970d, 2016d, 10d);
-        yAxis = new NumberAxis("Emissions", 0.0d, 3000.0d, 1000.0d);
+        yAxis = new NumberAxis("Emissions", 0.0d, 30000000.0d, 100000.0d);
         lineChart = new LineChart<>(xAxis, yAxis);
 
-        XYChart.Series noxSeries = new XYChart.Series();
-        noxSeries.setName("Nitrogen oxides (NOx)");
+        XYChart.Series<Number, Number> usNoxSeries = new XYChart.Series<>();
+        usNoxSeries.setName("Nitrogen oxides (NOx) - US");
+        XYChart.Series<Number, Number> usSo2Series = new XYChart.Series<>();
+        usSo2Series.setName("Sulphur dioxide (SO₂) - US");
+        XYChart.Series<Number, Number> ukNoxSeries = new XYChart.Series<>();
+        ukNoxSeries.setName("Nitrogen oxides (NOx) - UK");
+        XYChart.Series<Number, Number> ukSo2Series = new XYChart.Series<>();
+        ukSo2Series.setName("Sulphur dioxide (SO₂) - UK");
+
         for (AirPollutantEmission emission : emissions) {
-            noxSeries.getData().add(
-                new XYChart.Data(emission.getYear(), emission.getNox())
-                );
+            if ("GBR".equals(emission.getCountryCode())) {
+                ukNoxSeries.getData().add(
+                    new XYChart.Data<>(emission.getYear(), emission.getNox())
+                    );
+                ukSo2Series.getData().add(
+                    new XYChart.Data<>(emission.getYear(), emission.getSo2())
+                    );
+        
+            } else if ("USA".equals(emission.getCountryCode())) {
+                usNoxSeries.getData().add(
+                    new XYChart.Data<>(emission.getYear(), emission.getNox())
+                    );
+                usSo2Series.getData().add(
+                    new XYChart.Data<>(emission.getYear(), emission.getSo2())
+                    );
+                }
 
         }
 
-        lineChart.getData().add(noxSeries);
+        lineChart.getData().add(usNoxSeries);
+        lineChart.getData().add(usSo2Series);
+        lineChart.getData().add(ukNoxSeries);
+        lineChart.getData().add(ukSo2Series);
             
         return lineChart;
     }
