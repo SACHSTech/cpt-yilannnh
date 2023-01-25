@@ -74,15 +74,7 @@ public class AirPollutionChartsApp extends Application {
         return max;
     }
 
-    public Parent createContent() {
-        xAxis = new NumberAxis("Year", findMinYear(), findMaxYear(), 1);
-
-        yAxis = new NumberAxis();
-        yAxis.setLabel("Emissions");
-        yAxis.setAutoRanging(true);
-
-        lineChart = new LineChart<>(xAxis, yAxis);
-
+    public void prepareChart() {
         XYChart.Series<Number, Number> noxSeries = new XYChart.Series<>();
         noxSeries.setName("Nitrogen oxides (NOx)");
         XYChart.Series<Number, Number> so2Series = new XYChart.Series<>();
@@ -105,9 +97,22 @@ public class AirPollutionChartsApp extends Application {
             }
         }
 
+        lineChart.getData().clear();
         lineChart.getData().add(noxSeries);
         lineChart.getData().add(so2Series);
         lineChart.getData().add(vocsSeries);
+
+    }
+
+    public Parent createContent() {
+        xAxis = new NumberAxis("Year", findMinYear(), findMaxYear(), 1);
+
+        yAxis = new NumberAxis();
+        yAxis.setLabel("Emissions");
+        yAxis.setAutoRanging(true);
+
+        lineChart = new LineChart<>(xAxis, yAxis);
+
 
         BorderPane pane = new BorderPane();
         HBox hbox = new HBox();
@@ -119,7 +124,7 @@ public class AirPollutionChartsApp extends Application {
         countryCB.setOnAction(new EventHandler<ActionEvent>() {
             public void handle(ActionEvent e) {
                 selectedCountry = countryCB.getValue();
-                System.out.println(selectedCountry);
+                prepareChart();
             }
         });
         
