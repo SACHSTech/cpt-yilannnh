@@ -39,25 +39,24 @@ public class AirPollutionChartsApp extends Application {
     private boolean displayVocs = true;
 
     private PieChart pieChart;
+    private Label record;
 
     public void loadRawData() throws Exception {
         BufferedReader reader = new BufferedReader(new FileReader("air-pollutant-emissions.csv"));
         String line = reader.readLine();
 
         while (line != null) {
-            System.out.println(line);
             // read next line
             line = reader.readLine();
             if (line != null) {
-                String [] values = line.split(",");
+                String[] values = line.split(",");
                 AirPollutantEmission emission = new AirPollutantEmission(
-                    values[0],
-                    values[1],
-                    Integer.valueOf(values[2]),
-                    Float.valueOf(values[3]),
-                    Float.valueOf(values[4]),
-                    Float.valueOf(values[5])
-                );
+                        values[0],
+                        values[1],
+                        Integer.valueOf(values[2]),
+                        Float.valueOf(values[3]),
+                        Float.valueOf(values[4]),
+                        Float.valueOf(values[5]));
                 emissions.add(emission);
             }
         }
@@ -69,7 +68,7 @@ public class AirPollutionChartsApp extends Application {
     public double findMinYear() {
         double min = 2999;
         for (AirPollutantEmission e : emissions) {
-            if (e.getYear() < min) 
+            if (e.getYear() < min)
                 min = e.getYear();
         }
 
@@ -79,7 +78,7 @@ public class AirPollutionChartsApp extends Application {
     public double findMaxYear() {
         double max = 1999;
         for (AirPollutantEmission e : emissions) {
-            if (e.getYear() > max) 
+            if (e.getYear() > max)
                 max = e.getYear();
         }
 
@@ -100,12 +99,10 @@ public class AirPollutionChartsApp extends Application {
                 noxSeries.getData().add(noxData);
 
                 so2Series.getData().add(
-                    new XYChart.Data<>(emission.getYear(), emission.getSo2())
-                    );
+                        new XYChart.Data<>(emission.getYear(), emission.getSo2()));
                 vocsSeries.getData().add(
-                    new XYChart.Data<>(emission.getYear(), emission.getVocs())
-                    );    
-        
+                        new XYChart.Data<>(emission.getYear(), emission.getVocs()));
+
             }
         }
 
@@ -141,26 +138,27 @@ public class AirPollutionChartsApp extends Application {
             });
         }
 
+        lineChart.setTitle(
+                "Air Pollutant Emissions for " + selectedCountry + "\n(click on a data point to see more details)");
     }
 
     public void prepareSideChart(int year) {
         for (AirPollutantEmission e : emissions) {
             if (e.getYear() == year && selectedCountry.equals(e.getCountryCode())) {
                 ObservableList<PieChart.Data> data = FXCollections.observableArrayList(
-                    new PieChart.Data("NOx", e.getNox()),
-                    new PieChart.Data("SO₂", e.getSo2()),
-                    new PieChart.Data("VOCs", e.getVocs())
-                );
+                        new PieChart.Data("NOx", e.getNox()),
+                        new PieChart.Data("SO₂", e.getSo2()),
+                        new PieChart.Data("VOCs", e.getVocs()));
                 pieChart.setData(data);
                 pieChart.setTitle("Emission Details for " + year);
 
-                data.forEach(d ->
-                d.nameProperty().bind(
+                data.forEach(d -> d.nameProperty().bind(
                         Bindings.concat(
-                                d.getName(), " ", String.format("%,.0f", d.pieValueProperty().getValue()), " tonnes"
-                        )
-                )
-        );                
+                                d.getName(), " ", String.format("%,.0f", d.pieValueProperty().getValue()), " tonnes")));
+
+                record.setText("Country: " + selectedCountry + ", Year: " + year + ", NOx: "
+                        + String.format("%,.0f", e.getNox()) + ", SO₂: "
+                        + String.format("%,.0f", e.getSo2()) + ", VOCs: " + String.format("%,.0f", e.getVocs()));
             }
         }
     }
@@ -169,11 +167,10 @@ public class AirPollutionChartsApp extends Application {
         xAxis = new NumberAxis("Year", findMinYear(), findMaxYear(), 1);
 
         yAxis = new NumberAxis();
-        yAxis.setLabel("Emissions");
+        yAxis.setLabel("Emissions (tonnes)");
         yAxis.setAutoRanging(true);
 
         lineChart = new LineChart<>(xAxis, yAxis);
-
 
         BorderPane pane = new BorderPane();
         VBox lvbox = new VBox();
@@ -220,7 +217,7 @@ public class AirPollutionChartsApp extends Application {
             }
         });
         lvbox.getChildren().add(so2CheckBox);
-        
+
         CheckBox vocsCheckBox = new CheckBox("VOCs");
         vocsCheckBox.setSelected(displayVocs);
         vocsCheckBox.setOnAction(new EventHandler<ActionEvent>() {
@@ -240,9 +237,13 @@ public class AirPollutionChartsApp extends Application {
         pane.setCenter(lineChart);
 
         VBox rvbox = new VBox();
+        rvbox.setPadding(new Insets(10, 10, 10, 10));
+        rvbox.setSpacing(10);
         pieChart = new PieChart();
         rvbox.getChildren().add(pieChart);
-        
+        record = new Label();
+        rvbox.getChildren().add(record);
+
         pane.setRight(rvbox);
 
         return pane;
@@ -256,7 +257,7 @@ public class AirPollutionChartsApp extends Application {
         primaryStage.show();
 
         prepareChart();
-        
+
     }
 
     public static void main(String args[]) throws Exception {
