@@ -33,7 +33,7 @@ public class AirPollutionChartsApp extends Application {
     private XYChart.Series<Number, Number> noxSeries;
     private XYChart.Series<Number, Number> so2Series;
     private XYChart.Series<Number, Number> vocsSeries;
-    private String selectedCountry = "GBR";
+    private String selectedCountry = "USA"; // default country
     private boolean displayNox = true;
     private boolean displaySo2 = true;
     private boolean displayVocs = true;
@@ -182,6 +182,7 @@ public class AirPollutionChartsApp extends Application {
         lvbox.getChildren().add(new Label("Country:"));
         ObservableList<String> countryList = FXCollections.observableArrayList("USA", "GBR");
         ComboBox<String> countryCB = new ComboBox<>(countryList);
+        countryCB.setValue(selectedCountry);
         countryCB.setOnAction(new EventHandler<ActionEvent>() {
             public void handle(ActionEvent e) {
                 selectedCountry = countryCB.getValue();
@@ -253,6 +254,9 @@ public class AirPollutionChartsApp extends Application {
 
         primaryStage.setScene(new Scene(createContent()));
         primaryStage.show();
+
+        prepareChart();
+        
     }
 
     public static void main(String args[]) throws Exception {
