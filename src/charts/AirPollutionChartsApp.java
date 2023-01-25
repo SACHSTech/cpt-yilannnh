@@ -27,6 +27,9 @@ public class AirPollutionChartsApp extends Application {
     private LineChart<Number, Number> lineChart;
     private NumberAxis xAxis;
     private NumberAxis yAxis;
+    private XYChart.Series<Number, Number> noxSeries;
+    private XYChart.Series<Number, Number> so2Series;
+    private XYChart.Series<Number, Number> vocsSeries;
     private String selectedCountry = "GBR";
     private boolean displayNox = true;
     private boolean displaySo2 = true;
@@ -79,11 +82,11 @@ public class AirPollutionChartsApp extends Application {
     }
 
     public void prepareChart() {
-        XYChart.Series<Number, Number> noxSeries = new XYChart.Series<>();
+        noxSeries = new XYChart.Series<>();
         noxSeries.setName("Nitrogen oxides (NOx)");
-        XYChart.Series<Number, Number> so2Series = new XYChart.Series<>();
+        so2Series = new XYChart.Series<>();
         so2Series.setName("Sulphur dioxide (SO₂)");
-        XYChart.Series<Number, Number> vocsSeries = new XYChart.Series<>();
+        vocsSeries = new XYChart.Series<>();
         vocsSeries.setName("Non-methane volatile organic compounds (VOCs)");
 
         for (AirPollutantEmission emission : emissions) {
@@ -102,14 +105,9 @@ public class AirPollutionChartsApp extends Application {
         }
 
         lineChart.getData().clear();
-
-        if (displayNox)
-            lineChart.getData().add(noxSeries);
-        if (displaySo2)
-            lineChart.getData().add(so2Series);
-        if (displayVocs)
-            lineChart.getData().add(vocsSeries);
-
+        lineChart.getData().add(noxSeries);
+        lineChart.getData().add(so2Series);
+        lineChart.getData().add(vocsSeries);
     }
 
     public Parent createContent() {
@@ -142,7 +140,12 @@ public class AirPollutionChartsApp extends Application {
         noxCheckBox.setOnAction(new EventHandler<ActionEvent>() {
             public void handle(ActionEvent e) {
                 displayNox = noxCheckBox.selectedProperty().getValue();
-                prepareChart();
+                noxSeries.getNode().setVisible(displayNox);
+                for (XYChart.Data<Number, Number> d : noxSeries.getData()) {
+                    if (d.getNode() != null) {
+                        d.getNode().setVisible(displayNox);
+                    }
+                }
             }
         });
         lvbox.getChildren().add(noxCheckBox);
@@ -152,7 +155,12 @@ public class AirPollutionChartsApp extends Application {
         so2CheckBox.setOnAction(new EventHandler<ActionEvent>() {
             public void handle(ActionEvent e) {
                 displaySo2 = so2CheckBox.selectedProperty().getValue();
-                prepareChart();
+                so2Series.getNode().setVisible(displaySo2);
+                for (XYChart.Data<Number, Number> d : so2Series.getData()) {
+                    if (d.getNode() != null) {
+                        d.getNode().setVisible(displaySo2);
+                    }
+                }
             }
         });
         lvbox.getChildren().add(so2CheckBox);
@@ -162,7 +170,12 @@ public class AirPollutionChartsApp extends Application {
         vocsCheckBox.setOnAction(new EventHandler<ActionEvent>() {
             public void handle(ActionEvent e) {
                 displayVocs = vocsCheckBox.selectedProperty().getValue();
-                prepareChart();
+                vocsSeries.getNode().setVisible(displayVocs);
+                for (XYChart.Data<Number, Number> d : vocsSeries.getData()) {
+                    if (d.getNode() != null) {
+                        d.getNode().setVisible(displayVocs);
+                    }
+                }
             }
         });
         lvbox.getChildren().add(vocsCheckBox);
