@@ -5,11 +5,20 @@ import java.io.FileReader;
 import java.util.ArrayList;
 
 import javafx.application.Application;
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
+import javafx.event.ActionEvent;
+import javafx.event.EventHandler;
+import javafx.geometry.Insets;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.chart.LineChart;
 import javafx.scene.chart.NumberAxis;
 import javafx.scene.chart.XYChart;
+import javafx.scene.control.ComboBox;
+import javafx.scene.control.Label;
+import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.HBox;
 import javafx.stage.Stage;
 
 public class AirPollutionChartsApp extends Application {
@@ -17,6 +26,7 @@ public class AirPollutionChartsApp extends Application {
     private LineChart<Number, Number> lineChart;
     private NumberAxis xAxis;
     private NumberAxis yAxis;
+    private String selectedCountry = "GBR";
 
     public void loadRawData() throws Exception {
         BufferedReader reader = new BufferedReader(new FileReader("air-pollutant-emissions.csv"));
@@ -73,53 +83,52 @@ public class AirPollutionChartsApp extends Application {
 
         lineChart = new LineChart<>(xAxis, yAxis);
 
-        XYChart.Series<Number, Number> usNoxSeries = new XYChart.Series<>();
-        usNoxSeries.setName("Nitrogen oxides (NOx) - US");
-        XYChart.Series<Number, Number> usSo2Series = new XYChart.Series<>();
-        usSo2Series.setName("Sulphur dioxide (SO₂) - US");
-        XYChart.Series<Number, Number> usVocsSeries = new XYChart.Series<>();
-        usVocsSeries.setName("Non-methane volatile organic compounds (VOCs) - US");
-        XYChart.Series<Number, Number> ukNoxSeries = new XYChart.Series<>();
-        ukNoxSeries.setName("Nitrogen oxides (NOx) - UK");
-        XYChart.Series<Number, Number> ukSo2Series = new XYChart.Series<>();
-        ukSo2Series.setName("Sulphur dioxide (SO₂) - UK");
-        XYChart.Series<Number, Number> ukVocsSeries = new XYChart.Series<>();
-        ukVocsSeries.setName("Non-methane volatile organic compounds (VOCs) - UK");
+        XYChart.Series<Number, Number> noxSeries = new XYChart.Series<>();
+        noxSeries.setName("Nitrogen oxides (NOx)");
+        XYChart.Series<Number, Number> so2Series = new XYChart.Series<>();
+        so2Series.setName("Sulphur dioxide (SO₂)");
+        XYChart.Series<Number, Number> vocsSeries = new XYChart.Series<>();
+        vocsSeries.setName("Non-methane volatile organic compounds (VOCs)");
 
         for (AirPollutantEmission emission : emissions) {
-            if ("GBR".equals(emission.getCountryCode())) {
-                ukNoxSeries.getData().add(
+            if (selectedCountry.equals(emission.getCountryCode())) {
+                noxSeries.getData().add(
                     new XYChart.Data<>(emission.getYear(), emission.getNox())
                     );
-                ukSo2Series.getData().add(
+                so2Series.getData().add(
                     new XYChart.Data<>(emission.getYear(), emission.getSo2())
                     );
-                ukVocsSeries.getData().add(
+                vocsSeries.getData().add(
                     new XYChart.Data<>(emission.getYear(), emission.getVocs())
                     );    
         
-            } else if ("USA".equals(emission.getCountryCode())) {
-                usNoxSeries.getData().add(
-                    new XYChart.Data<>(emission.getYear(), emission.getNox())
-                    );
-                usSo2Series.getData().add(
-                    new XYChart.Data<>(emission.getYear(), emission.getSo2())
-                    );
-                usVocsSeries.getData().add(
-                    new XYChart.Data<>(emission.getYear(), emission.getVocs())
-                    );
-                }
-
+            }
         }
 
-        lineChart.getData().add(usNoxSeries);
-        lineChart.getData().add(usSo2Series);
-        lineChart.getData().add(usVocsSeries);
-        lineChart.getData().add(ukNoxSeries);
-        lineChart.getData().add(ukSo2Series);
-        lineChart.getData().add(ukVocsSeries);
-            
-        return lineChart;
+        lineChart.getData().add(noxSeries);
+        lineChart.getData().add(so2Series);
+        lineChart.getData().add(vocsSeries);
+
+        BorderPane pane = new BorderPane();
+        HBox hbox = new HBox();
+        hbox.setPadding(new Insets(10, 10, 10, 10));
+        hbox.setSpacing(10);
+        hbox.getChildren().add(new Label("Country:"));
+        ObservableList<String> countryList = FXCollections.observableArrayList("USA", "GBR");
+        ComboBox<String> countryCB = new ComboBox<>(countryList);
+        countryCB.setOnAction(new EventHandler<ActionEvent>() {
+            public void handle(ActionEvent e) {
+                selectedCountry = countryCB.getValue();
+                System.out.println(selectedCountry);
+            }
+        });
+        
+        hbox.getChildren().add(countryCB);
+
+        pane.setTop(hbox);
+        pane.setCenter(lineChart);
+
+        return pane;
     }
 
     @Override
