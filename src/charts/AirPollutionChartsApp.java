@@ -5,6 +5,7 @@ import java.io.FileReader;
 import java.util.ArrayList;
 
 import javafx.application.Application;
+import javafx.beans.binding.Bindings;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
@@ -14,10 +15,12 @@ import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.chart.LineChart;
 import javafx.scene.chart.NumberAxis;
+import javafx.scene.chart.PieChart;
 import javafx.scene.chart.XYChart;
 import javafx.scene.control.CheckBox;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
+import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
@@ -27,29 +30,33 @@ public class AirPollutionChartsApp extends Application {
     private LineChart<Number, Number> lineChart;
     private NumberAxis xAxis;
     private NumberAxis yAxis;
-    private String selectedCountry = "GBR";
+    private XYChart.Series<Number, Number> noxSeries;
+    private XYChart.Series<Number, Number> so2Series;
+    private XYChart.Series<Number, Number> vocsSeries;
+    private String selectedCountry = "USA"; // default country
     private boolean displayNox = true;
     private boolean displaySo2 = true;
     private boolean displayVocs = true;
+
+    private PieChart pieChart;
+    private Label record;
 
     public void loadRawData() throws Exception {
         BufferedReader reader = new BufferedReader(new FileReader("air-pollutant-emissions.csv"));
         String line = reader.readLine();
 
         while (line != null) {
-            System.out.println(line);
             // read next line
             line = reader.readLine();
             if (line != null) {
-                String [] values = line.split(",");
+                String[] values = line.split(",");
                 AirPollutantEmission emission = new AirPollutantEmission(
-                    values[0],
-                    values[1],
-                    Integer.valueOf(values[2]),
-                    Float.valueOf(values[3]),
-                    Float.valueOf(values[4]),
-                    Float.valueOf(values[5])
-                );
+                        values[0],
+                        values[1],
+                        Integer.valueOf(values[2]),
+                        Float.valueOf(values[3]),
+                        Float.valueOf(values[4]),
+                        Float.valueOf(values[5]));
                 emissions.add(emission);
             }
         }
@@ -61,7 +68,7 @@ public class AirPollutionChartsApp extends Application {
     public double findMinYear() {
         double min = 2999;
         for (AirPollutantEmission e : emissions) {
-            if (e.getYear() < min) 
+            if (e.getYear() < min)
                 min = e.getYear();
         }
 
@@ -71,7 +78,7 @@ public class AirPollutionChartsApp extends Application {
     public double findMaxYear() {
         double max = 1999;
         for (AirPollutantEmission e : emissions) {
-            if (e.getYear() > max) 
+            if (e.getYear() > max)
                 max = e.getYear();
         }
 
@@ -79,48 +86,91 @@ public class AirPollutionChartsApp extends Application {
     }
 
     public void prepareChart() {
-        XYChart.Series<Number, Number> noxSeries = new XYChart.Series<>();
+        noxSeries = new XYChart.Series<>();
         noxSeries.setName("Nitrogen oxides (NOx)");
-        XYChart.Series<Number, Number> so2Series = new XYChart.Series<>();
+        so2Series = new XYChart.Series<>();
         so2Series.setName("Sulphur dioxide (SO₂)");
-        XYChart.Series<Number, Number> vocsSeries = new XYChart.Series<>();
+        vocsSeries = new XYChart.Series<>();
         vocsSeries.setName("Non-methane volatile organic compounds (VOCs)");
 
         for (AirPollutantEmission emission : emissions) {
             if (selectedCountry.equals(emission.getCountryCode())) {
-                noxSeries.getData().add(
-                    new XYChart.Data<>(emission.getYear(), emission.getNox())
-                    );
+                XYChart.Data<Number, Number> noxData = new XYChart.Data<>(emission.getYear(), emission.getNox());
+                noxSeries.getData().add(noxData);
+
                 so2Series.getData().add(
-                    new XYChart.Data<>(emission.getYear(), emission.getSo2())
-                    );
+                        new XYChart.Data<>(emission.getYear(), emission.getSo2()));
                 vocsSeries.getData().add(
-                    new XYChart.Data<>(emission.getYear(), emission.getVocs())
-                    );    
-        
+                        new XYChart.Data<>(emission.getYear(), emission.getVocs()));
+
             }
         }
 
         lineChart.getData().clear();
+        lineChart.getData().add(noxSeries);
+        lineChart.getData().add(so2Series);
+        lineChart.getData().add(vocsSeries);
 
-        if (displayNox)
-            lineChart.getData().add(noxSeries);
-        if (displaySo2)
-            lineChart.getData().add(so2Series);
-        if (displayVocs)
-            lineChart.getData().add(vocsSeries);
+        for (XYChart.Data<Number, Number> d : noxSeries.getData()) {
+            d.getNode().setOnMouseClicked(new EventHandler<MouseEvent>() {
+                @Override
+                public void handle(MouseEvent e) {
+                    prepareSideChart((int) d.getXValue());
+                }
+            });
+        }
 
+        for (XYChart.Data<Number, Number> d : so2Series.getData()) {
+            d.getNode().setOnMouseClicked(new EventHandler<MouseEvent>() {
+                @Override
+                public void handle(MouseEvent e) {
+                    prepareSideChart((int) d.getXValue());
+                }
+            });
+        }
+
+        for (XYChart.Data<Number, Number> d : vocsSeries.getData()) {
+            d.getNode().setOnMouseClicked(new EventHandler<MouseEvent>() {
+                @Override
+                public void handle(MouseEvent e) {
+                    prepareSideChart((int) d.getXValue());
+                }
+            });
+        }
+
+        lineChart.setTitle(
+                "Air Pollutant Emissions for " + selectedCountry + "\n(click on a data point to see more details)");
+    }
+
+    public void prepareSideChart(int year) {
+        for (AirPollutantEmission e : emissions) {
+            if (e.getYear() == year && selectedCountry.equals(e.getCountryCode())) {
+                ObservableList<PieChart.Data> data = FXCollections.observableArrayList(
+                        new PieChart.Data("NOx", e.getNox()),
+                        new PieChart.Data("SO₂", e.getSo2()),
+                        new PieChart.Data("VOCs", e.getVocs()));
+                pieChart.setData(data);
+                pieChart.setTitle("Emission Details for " + year);
+
+                data.forEach(d -> d.nameProperty().bind(
+                        Bindings.concat(
+                                d.getName(), " ", String.format("%,.0f", d.pieValueProperty().getValue()), " tonnes")));
+
+                record.setText("Country: " + selectedCountry + ", Year: " + year + ", NOx: "
+                        + String.format("%,.0f", e.getNox()) + ", SO₂: "
+                        + String.format("%,.0f", e.getSo2()) + ", VOCs: " + String.format("%,.0f", e.getVocs()));
+            }
+        }
     }
 
     public Parent createContent() {
         xAxis = new NumberAxis("Year", findMinYear(), findMaxYear(), 1);
 
         yAxis = new NumberAxis();
-        yAxis.setLabel("Emissions");
+        yAxis.setLabel("Emissions (tonnes)");
         yAxis.setAutoRanging(true);
 
         lineChart = new LineChart<>(xAxis, yAxis);
-
 
         BorderPane pane = new BorderPane();
         VBox lvbox = new VBox();
@@ -129,6 +179,7 @@ public class AirPollutionChartsApp extends Application {
         lvbox.getChildren().add(new Label("Country:"));
         ObservableList<String> countryList = FXCollections.observableArrayList("USA", "GBR");
         ComboBox<String> countryCB = new ComboBox<>(countryList);
+        countryCB.setValue(selectedCountry);
         countryCB.setOnAction(new EventHandler<ActionEvent>() {
             public void handle(ActionEvent e) {
                 selectedCountry = countryCB.getValue();
@@ -142,7 +193,12 @@ public class AirPollutionChartsApp extends Application {
         noxCheckBox.setOnAction(new EventHandler<ActionEvent>() {
             public void handle(ActionEvent e) {
                 displayNox = noxCheckBox.selectedProperty().getValue();
-                prepareChart();
+                noxSeries.getNode().setVisible(displayNox);
+                for (XYChart.Data<Number, Number> d : noxSeries.getData()) {
+                    if (d.getNode() != null) {
+                        d.getNode().setVisible(displayNox);
+                    }
+                }
             }
         });
         lvbox.getChildren().add(noxCheckBox);
@@ -152,23 +208,43 @@ public class AirPollutionChartsApp extends Application {
         so2CheckBox.setOnAction(new EventHandler<ActionEvent>() {
             public void handle(ActionEvent e) {
                 displaySo2 = so2CheckBox.selectedProperty().getValue();
-                prepareChart();
+                so2Series.getNode().setVisible(displaySo2);
+                for (XYChart.Data<Number, Number> d : so2Series.getData()) {
+                    if (d.getNode() != null) {
+                        d.getNode().setVisible(displaySo2);
+                    }
+                }
             }
         });
         lvbox.getChildren().add(so2CheckBox);
-        
+
         CheckBox vocsCheckBox = new CheckBox("VOCs");
         vocsCheckBox.setSelected(displayVocs);
         vocsCheckBox.setOnAction(new EventHandler<ActionEvent>() {
             public void handle(ActionEvent e) {
                 displayVocs = vocsCheckBox.selectedProperty().getValue();
-                prepareChart();
+                vocsSeries.getNode().setVisible(displayVocs);
+                for (XYChart.Data<Number, Number> d : vocsSeries.getData()) {
+                    if (d.getNode() != null) {
+                        d.getNode().setVisible(displayVocs);
+                    }
+                }
             }
         });
         lvbox.getChildren().add(vocsCheckBox);
 
         pane.setLeft(lvbox);
         pane.setCenter(lineChart);
+
+        VBox rvbox = new VBox();
+        rvbox.setPadding(new Insets(10, 10, 10, 10));
+        rvbox.setSpacing(10);
+        pieChart = new PieChart();
+        rvbox.getChildren().add(pieChart);
+        record = new Label();
+        rvbox.getChildren().add(record);
+
+        pane.setRight(rvbox);
 
         return pane;
     }
@@ -179,6 +255,9 @@ public class AirPollutionChartsApp extends Application {
 
         primaryStage.setScene(new Scene(createContent()));
         primaryStage.show();
+
+        prepareChart();
+
     }
 
     public static void main(String args[]) throws Exception {
