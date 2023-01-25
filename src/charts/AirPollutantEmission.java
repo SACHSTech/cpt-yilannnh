@@ -9,7 +9,7 @@ public class AirPollutantEmission {
     private float vocs;
 
     public AirPollutantEmission() {
-        
+
     }
 
     public AirPollutantEmission(String countryName, String countryCode, int year, float nox, float so2, float vocs) {
@@ -21,6 +21,7 @@ public class AirPollutantEmission {
         this.vocs = vocs;
     }
 
+    // Getter/Setter methods
     public String getCountryName() {
         return countryName;
     }
