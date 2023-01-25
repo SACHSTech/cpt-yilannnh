@@ -15,10 +15,11 @@ import javafx.scene.Scene;
 import javafx.scene.chart.LineChart;
 import javafx.scene.chart.NumberAxis;
 import javafx.scene.chart.XYChart;
+import javafx.scene.control.CheckBox;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
 import javafx.scene.layout.BorderPane;
-import javafx.scene.layout.HBox;
+import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 
 public class AirPollutionChartsApp extends Application {
@@ -27,6 +28,9 @@ public class AirPollutionChartsApp extends Application {
     private NumberAxis xAxis;
     private NumberAxis yAxis;
     private String selectedCountry = "GBR";
+    private boolean displayNox = true;
+    private boolean displaySo2 = true;
+    private boolean displayVocs = true;
 
     public void loadRawData() throws Exception {
         BufferedReader reader = new BufferedReader(new FileReader("air-pollutant-emissions.csv"));
@@ -98,9 +102,13 @@ public class AirPollutionChartsApp extends Application {
         }
 
         lineChart.getData().clear();
-        lineChart.getData().add(noxSeries);
-        lineChart.getData().add(so2Series);
-        lineChart.getData().add(vocsSeries);
+
+        if (displayNox)
+            lineChart.getData().add(noxSeries);
+        if (displaySo2)
+            lineChart.getData().add(so2Series);
+        if (displayVocs)
+            lineChart.getData().add(vocsSeries);
 
     }
 
@@ -115,10 +123,10 @@ public class AirPollutionChartsApp extends Application {
 
 
         BorderPane pane = new BorderPane();
-        HBox hbox = new HBox();
-        hbox.setPadding(new Insets(10, 10, 10, 10));
-        hbox.setSpacing(10);
-        hbox.getChildren().add(new Label("Country:"));
+        VBox lvbox = new VBox();
+        lvbox.setPadding(new Insets(10, 10, 10, 10));
+        lvbox.setSpacing(10);
+        lvbox.getChildren().add(new Label("Country:"));
         ObservableList<String> countryList = FXCollections.observableArrayList("USA", "GBR");
         ComboBox<String> countryCB = new ComboBox<>(countryList);
         countryCB.setOnAction(new EventHandler<ActionEvent>() {
@@ -127,10 +135,39 @@ public class AirPollutionChartsApp extends Application {
                 prepareChart();
             }
         });
-        
-        hbox.getChildren().add(countryCB);
+        lvbox.getChildren().add(countryCB);
 
-        pane.setTop(hbox);
+        CheckBox noxCheckBox = new CheckBox("NOx");
+        noxCheckBox.setSelected(displayNox);
+        noxCheckBox.setOnAction(new EventHandler<ActionEvent>() {
+            public void handle(ActionEvent e) {
+                displayNox = noxCheckBox.selectedProperty().getValue();
+                prepareChart();
+            }
+        });
+        lvbox.getChildren().add(noxCheckBox);
+
+        CheckBox so2CheckBox = new CheckBox("SO₂");
+        so2CheckBox.setSelected(displaySo2);
+        so2CheckBox.setOnAction(new EventHandler<ActionEvent>() {
+            public void handle(ActionEvent e) {
+                displaySo2 = so2CheckBox.selectedProperty().getValue();
+                prepareChart();
+            }
+        });
+        lvbox.getChildren().add(so2CheckBox);
+        
+        CheckBox vocsCheckBox = new CheckBox("VOCs");
+        vocsCheckBox.setSelected(displayVocs);
+        vocsCheckBox.setOnAction(new EventHandler<ActionEvent>() {
+            public void handle(ActionEvent e) {
+                displayVocs = vocsCheckBox.selectedProperty().getValue();
+                prepareChart();
+            }
+        });
+        lvbox.getChildren().add(vocsCheckBox);
+
+        pane.setLeft(lvbox);
         pane.setCenter(lineChart);
 
         return pane;
