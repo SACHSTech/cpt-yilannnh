@@ -5,6 +5,7 @@ import java.io.FileReader;
 import java.util.ArrayList;
 
 import javafx.application.Application;
+import javafx.beans.binding.Bindings;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
@@ -14,10 +15,12 @@ import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.chart.LineChart;
 import javafx.scene.chart.NumberAxis;
+import javafx.scene.chart.PieChart;
 import javafx.scene.chart.XYChart;
 import javafx.scene.control.CheckBox;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
+import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
@@ -34,6 +37,8 @@ public class AirPollutionChartsApp extends Application {
     private boolean displayNox = true;
     private boolean displaySo2 = true;
     private boolean displayVocs = true;
+
+    private PieChart pieChart;
 
     public void loadRawData() throws Exception {
         BufferedReader reader = new BufferedReader(new FileReader("air-pollutant-emissions.csv"));
@@ -91,9 +96,9 @@ public class AirPollutionChartsApp extends Application {
 
         for (AirPollutantEmission emission : emissions) {
             if (selectedCountry.equals(emission.getCountryCode())) {
-                noxSeries.getData().add(
-                    new XYChart.Data<>(emission.getYear(), emission.getNox())
-                    );
+                XYChart.Data<Number, Number> noxData = new XYChart.Data<>(emission.getYear(), emission.getNox());
+                noxSeries.getData().add(noxData);
+
                 so2Series.getData().add(
                     new XYChart.Data<>(emission.getYear(), emission.getSo2())
                     );
@@ -108,6 +113,56 @@ public class AirPollutionChartsApp extends Application {
         lineChart.getData().add(noxSeries);
         lineChart.getData().add(so2Series);
         lineChart.getData().add(vocsSeries);
+
+        for (XYChart.Data<Number, Number> d : noxSeries.getData()) {
+            d.getNode().setOnMouseClicked(new EventHandler<MouseEvent>() {
+                @Override
+                public void handle(MouseEvent e) {
+                    prepareSideChart((int) d.getXValue());
+                }
+            });
+        }
+
+        for (XYChart.Data<Number, Number> d : so2Series.getData()) {
+            d.getNode().setOnMouseClicked(new EventHandler<MouseEvent>() {
+                @Override
+                public void handle(MouseEvent e) {
+                    prepareSideChart((int) d.getXValue());
+                }
+            });
+        }
+
+        for (XYChart.Data<Number, Number> d : vocsSeries.getData()) {
+            d.getNode().setOnMouseClicked(new EventHandler<MouseEvent>() {
+                @Override
+                public void handle(MouseEvent e) {
+                    prepareSideChart((int) d.getXValue());
+                }
+            });
+        }
+
+    }
+
+    public void prepareSideChart(int year) {
+        for (AirPollutantEmission e : emissions) {
+            if (e.getYear() == year && selectedCountry.equals(e.getCountryCode())) {
+                ObservableList<PieChart.Data> data = FXCollections.observableArrayList(
+                    new PieChart.Data("NOx", e.getNox()),
+                    new PieChart.Data("SO₂", e.getSo2()),
+                    new PieChart.Data("VOCs", e.getVocs())
+                );
+                pieChart.setData(data);
+                pieChart.setTitle("Emission Details for " + year);
+
+                data.forEach(d ->
+                d.nameProperty().bind(
+                        Bindings.concat(
+                                d.getName(), " ", String.format("%,.0f", d.pieValueProperty().getValue()), " tonnes"
+                        )
+                )
+        );                
+            }
+        }
     }
 
     public Parent createContent() {
@@ -182,6 +237,12 @@ public class AirPollutionChartsApp extends Application {
 
         pane.setLeft(lvbox);
         pane.setCenter(lineChart);
+
+        VBox rvbox = new VBox();
+        pieChart = new PieChart();
+        rvbox.getChildren().add(pieChart);
+        
+        pane.setRight(rvbox);
 
         return pane;
     }
